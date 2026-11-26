@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>아파트 취득세 계산기 2026 | 1주택·다주택 중과·생애최초 감면</title>
+<meta name="description" content="매매가와 주택 수, 지역만 고르면 아파트 취득세·지방교육세·농어촌특별세를 바로 계산해요. 6~9억 구간 세율, 조정대상지역 중과 8%·12%, 생애최초 200만원 감면 반영.">
+<link rel="canonical" href="https://apttaxcalc.com/acquisition-tax/">
+<meta property="og:type" content="website"><meta property="og:site_name" content="아파트세금계산기"><meta property="og:locale" content="ko_KR">
+<meta property="og:title" content="아파트 취득세 계산기 2026 | 1주택·다주택 중과·생애최초 감면"><meta property="og:description" content="매매가와 주택 수, 지역만 고르면 아파트 취득세·지방교육세·농어촌특별세를 바로 계산해요. 6~9억 구간 세율, 조정대상지역 중과 8%·12%, 생애최초 200만원 감면 반영."><meta property="og:url" content="https://apttaxcalc.com/acquisition-tax/"><meta property="og:image" content="https://apttaxcalc.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#ff6a2b"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css?v=2026-11-27">
+<!-- 애드센스 코드는 승인 신청 때 여기에 들어갑니다 (build.py의 ADSENSE 설정) -->
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "아파트 취득세 계산기", "url": "https://apttaxcalc.com/acquisition-tax/", "applicationCategory": "FinanceApplication", "operatingSystem": "All", "inLanguage": "ko", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "KRW"}, "description": "매매가와 주택 수, 지역만 고르면 아파트 취득세·지방교육세·농어촌특별세를 바로 계산해요. 6~9억 구간 세율, 조정대상지역 중과 8%·12%, 생애최초 200만원 감면 반영."}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "취득세는 언제까지 내야 하나요?", "acceptedAnswer": {"@type": "Answer", "text": "잔금일과 등기접수일 중 빠른 날부터 60일 안에 신고·납부해야 해요. 늦으면 가산세가 붙어요."}}, {"@type": "Question", "name": "서울에서 두 번째 집을 사면 취득세가 얼마인가요?", "acceptedAnswer": {"@type": "Answer", "text": "서울은 25개 구 전체가 조정대상지역이라 2주택이 되면 8%예요. 이사 때문에 잠깐 2주택이 되는 일시적 2주택이고 기한 안에 기존 집을 팔면 1~3%로 계산해요."}}, {"@type": "Question", "name": "생애최초 감면은 누구나 받나요?", "acceptedAnswer": {"@type": "Answer", "text": "본인과 배우자 모두 주택을 가져본 적이 없고, 12억원 이하 주택을 사는 경우 최대 200만원까지 감면돼요. 3개월 안에 전입해 살아야 하고, 3년 안에 팔거나 임대하면 추징돼요."}}]}</script><script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "홈", "item": "https://apttaxcalc.com/"}, {"@type": "ListItem", "position": 2, "name": "아파트 취득세 계산기", "item": "https://apttaxcalc.com/acquisition-tax/"}]}</script>
+</head><body>
+<header class="top"><div class="wrap"><a class="brand" href="/">← 아파트세금계산기</a><h1>아파트 취득세 계산기</h1><p>집값과 주택 수만 고르면 살 때 내는 세금이 바로 나와요.</p></div></header>
+<nav class="tabbar" aria-label="계산기 종류"><div class="wrap tabs" id="tabs"><a href="/acquisition-tax/" aria-current=page>취득세<small>살 때</small></a><a href="/holding-tax/">보유세<small>재산·종부세</small></a><a href="/capital-gains-tax/">양도세<small>팔 때</small></a><a href="/loan-interest/">금리계산기<small>대출 이자</small></a></div></nav>
+<main><section class="calc"><div class="view" data-v="buy">
+<section class="band"><div class="wrap main">
+  <div>
+    <h2>살 아파트</h2>
+    <div class="apt">
+      <div class="q" style="margin-top:0">① 얼마에 사나요?</div>
+      <div class="pricebox"><input id="bPrice" type="number" inputmode="decimal" step="0.1" min="0" value="9" aria-label="매매가 (억원)"><span>억원</span></div>
+      <div class="hint" id="bPriceH"></div>
+      <div class="q">② 사고 나면 우리 집(세대)은 몇 채가 되나요?</div>
+      <div class="seg yn" id="bN"><button type="button" data-v="1">1채</button><button type="button" data-v="2">2채</button><button type="button" data-v="3">3채</button><button type="button" data-v="4">4채 이상</button></div>
+      <label class="chk" id="bTempL"><input type="checkbox" id="bTemp">이사 때문에 잠깐 2채예요 (기한 안에 기존 집 처분)</label>
+      <div class="q">③ 어디에 있나요?</div>
+      <div class="seg yn" id="bReg"><button type="button" data-v="seoul">서울</button><button type="button" data-v="gg">경기 규제</button><button type="button" data-v="etc">그 외</button></div>
+      <div class="hint">경기 규제지역 15곳: 과천·광명·하남·의왕·구리, 성남 분당·수정·중원, 수원 영통·장안·팔달, 안양 동안, 용인 수지·기흥, 화성 동탄구</div>
+      <div class="q">④ 전용면적은요?</div>
+      <div class="seg yn" id="bArea"><button type="button" data-v="0">85㎡ 이하<small>34평형 이하</small></button><button type="button" data-v="1">85㎡ 초과<small>대형 평형</small></button></div>
+      <label class="chk" id="bFirstL"><input type="checkbox" id="bFirst">생애 처음 사는 집이에요 (본인·배우자 모두 집을 가져본 적 없음)</label>
+    </div>
+  </div>
+  <aside class="bill" aria-live="polite">
+    <div class="paper">
+      <div class="ph"><span>취득세 영수증 (추정)</span><span>잔금일부터 60일 안에 신고·납부</span></div>
+      <div class="tot"><div class="sub">살 때 내는 세금 합계</div><div class="big" id="bTotal">0원</div><div class="sub" id="bPct"></div></div>
+      <div class="rows" id="bRows"></div>
+    </div>
+    <div id="bNotes"></div>
+  </aside>
+</div></section>
+<section class="band" style="background:var(--soft)"><div class="wrap">
+  <h2>집값·주택 수별 취득세 한눈에</h2>
+  <p class="sub" style="margin-top:-6px">전용 85㎡ 이하, 감면 없음, 취득세+지방교육세 합계</p>
+  <div class="scroll"><table id="bQuick"></table></div>
+</div></section>
+</div></section><section class="band"><div class="wrap prose">
+<h2>아파트 취득세, 이렇게 계산돼요</h2>
+<p>취득세는 아파트를 살 때 한 번 내는 지방세예요. 잔금일과 소유권이전등기 접수일 중 빠른 날이 취득일이고, 그날부터 <b>60일 안에</b> 신고하고 내야 가산세가 붙지 않아요. 고지서가 따로 오지 않으니 매수자가 직접(보통 법무사를 통해) 신고합니다.</p>
+<p>낼 돈은 세 가지를 더한 값이에요. <b>취득세 본세</b> + <b>지방교육세</b> + <b>농어촌특별세</b>(전용 85㎡를 넘을 때만). 위 계산기는 이 세 가지를 모두 더해 보여줘요.</p>
+
+<h3>1주택이 되는 경우의 세율</h3>
+<table class="stack"><thead><tr><th>매매가</th><th>취득세율</th><th>지방교육세</th><th>농특세 (85㎡ 초과)</th></tr></thead><tbody>
+<tr><td data-l="매매가">6억원 이하</td><td data-l="취득세율">1%</td><td data-l="지방교육세">0.1%</td><td data-l="농특세 (85㎡ 초과)">0.2%</td></tr>
+<tr><td data-l="매매가">6억원 초과 ~ 9억원 이하</td><td data-l="취득세율">(매매가 × 2/3억원 − 3)%</td><td data-l="지방교육세">세율의 1/10</td><td data-l="농특세 (85㎡ 초과)">0.2%</td></tr>
+<tr><td data-l="매매가">9억원 초과</td><td data-l="취득세율">3%</td><td data-l="지방교육세">0.3%</td><td data-l="농특세 (85㎡ 초과)">0.2%</td></tr>
+</tbody></table>
+<p>6억~9억원 구간은 계단처럼 뛰지 않고 집값에 비례해 1%에서 3%까지 조금씩 올라가요. 세율은 소수점 다섯째 자리에서 반올림해요. 그래서 7억원이면 1.6667%, 7억 5천만원이면 2%, 8억원이면 2.3333%가 됩니다.</p>
+
+<h3>다주택이 되면 중과세율</h3>
+<p>집을 산 뒤 세대 전체가 가진 주택 수와, 산 집이 조정대상지역인지에 따라 세율이 크게 달라져요.</p>
+<table class="stack"><thead><tr><th>사고 난 뒤 주택 수</th><th>조정대상지역</th><th>그 외 지역</th></tr></thead><tbody>
+<tr><td data-l="사고 난 뒤 주택 수">1주택</td><td data-l="조정대상지역">1~3%</td><td data-l="그 외 지역">1~3%</td></tr>
+<tr><td data-l="사고 난 뒤 주택 수">2주택</td><td data-l="조정대상지역">8% (일시적 2주택은 1~3%)</td><td data-l="그 외 지역">1~3%</td></tr>
+<tr><td data-l="사고 난 뒤 주택 수">3주택</td><td data-l="조정대상지역">12%</td><td data-l="그 외 지역">8%</td></tr>
+<tr><td data-l="사고 난 뒤 주택 수">4주택 이상</td><td data-l="조정대상지역">12%</td><td data-l="그 외 지역">12%</td></tr>
+</tbody></table>
+<p>중과세율이 붙으면 지방교육세는 0.4%로 고정되고, 85㎡를 넘는 집은 농어촌특별세가 8%일 때 0.6%, 12%일 때 1.0%로 올라요. 지금 조정대상지역은 서울 25개 구 전체와 경기 15곳이에요. 지역별 기간은 <a href="/guide/regulated-areas/">조정대상지역 지정 현황</a>에 정리해 두었어요.</p>
+<p>이사 때문에 잠깐 2주택이 되는 <b>일시적 2주택</b>은 기존 집을 정해진 기한 안에 팔면 조정대상지역이어도 1~3%로 계산해요. 기한 안에 못 팔면 중과세율과의 차액을 추징당해요. 기한은 원래 3년인데, 조정대상지역끼리 갈아타는 경우 2년으로 줄이는 개편이 진행됐으니 계약 전에 꼭 확인하세요.</p>
+
+<h3>생애최초 감면</h3>
+<p>본인과 배우자 모두 주택을 가져본 적이 없고 12억원 이하 주택을 산다면, 취득세를 <b>최대 200만원</b>까지 감면받아요. 산출 취득세가 200만원 이하면 전액 면제, 넘으면 200만원을 빼 줍니다. 이 감면은 2028년 말까지 연장됐어요. 다만 산 뒤 3개월 안에 전입해 실제로 살아야 하고, 3년 안에 팔거나 증여·임대하면 감면받은 세금을 다시 내야 해요.</p>
+
+<h3>계산 예시</h3>
+<table class="stack"><thead><tr><th>상황</th><th>취득세</th><th>지방교육세</th><th>농특세</th><th>합계</th></tr></thead><tbody>
+<tr><td data-l="상황">7억원, 1주택, 84㎡</td><td data-l="취득세">11,666,900원</td><td data-l="지방교육세">1,166,690원</td><td data-l="농특세">없음</td><td data-l="합계"><b>12,833,590원</b></td></tr>
+<tr><td data-l="상황">8억원, 1주택, 84㎡</td><td data-l="취득세">18,666,400원</td><td data-l="지방교육세">1,866,640원</td><td data-l="농특세">없음</td><td data-l="합계"><b>20,533,040원</b></td></tr>
+<tr><td data-l="상황">10억원, 서울 2주택, 85㎡ 초과</td><td data-l="취득세">80,000,000원</td><td data-l="지방교육세">4,000,000원</td><td data-l="농특세">6,000,000원</td><td data-l="합계"><b>90,000,000원</b></td></tr>
+<tr><td data-l="상황">5억원, 비조정 3주택, 84㎡</td><td data-l="취득세">40,000,000원</td><td data-l="지방교육세">2,000,000원</td><td data-l="농특세">없음</td><td data-l="합계"><b>42,000,000원</b></td></tr>
+</tbody></table>
+
+<h3>계산기가 반영하지 않는 것</h3>
+<ul>
+<li>분양권·입주권, 2020년 8월 12일 이후 취득한 주거용 오피스텔도 주택 수에 들어가요. 계산기에서는 직접 세어 넣어 주세요.</li>
+<li>공시가격 1억원 이하 주택 등 중과 예외, 출산·양육 감면, 지방 미분양 감면 등은 반영하지 않았어요.</li>
+<li>법인이 사는 경우, 증여·상속으로 받는 경우는 세율이 달라요.</li>
+</ul>
+</div></section><section class="band faq" id="faq"><div class="wrap prose"><h2>자주 묻는 질문</h2><details><summary>취득세는 언제까지 내야 하나요?</summary><p>잔금일과 등기접수일 중 빠른 날부터 60일 안에 신고·납부해야 해요. 늦으면 가산세가 붙어요.</p></details><details><summary>서울에서 두 번째 집을 사면 취득세가 얼마인가요?</summary><p>서울은 25개 구 전체가 조정대상지역이라 2주택이 되면 8%예요. 이사 때문에 잠깐 2주택이 되는 일시적 2주택이고 기한 안에 기존 집을 팔면 1~3%로 계산해요.</p></details><details><summary>생애최초 감면은 누구나 받나요?</summary><p>본인과 배우자 모두 주택을 가져본 적이 없고, 12억원 이하 주택을 사는 경우 최대 200만원까지 감면돼요. 3개월 안에 전입해 살아야 하고, 3년 안에 팔거나 임대하면 추징돼요.</p></details></div></section><section class="band" style="background:var(--soft)"><div class="wrap prose"><h2>함께 보면 좋은 글</h2><ul class="glist"><li><a href="/guide/2026-tax-reform/">2026 세제개편안, 아파트 세금 무엇이 바뀌나<small>2026년 8월 정부 세제개편안의 종부세·양도세 변경 내용을 1주택·다주택 상황별로 정리했어요. 실거주 14억 공제, 비거주 9억, 다주택 중과 한시 완화까지.</small></a></li><li><a href="/guide/regulated-areas/">조정대상지역 지정 현황과 이력 (2016~2026)<small>서울 25개 구와 경기 15곳의 조정대상지역 지정·해제 날짜를 한 표로 정리했어요. 산 날짜 기준으로 세금이 달라지는 이유도 함께 설명해요.</small></a></li></ul></div></section></main>
+<button type="button" id="mbar" class="mbar" aria-label="결과 보기"><span id="mbL"></span><b id="mbV"></b><span class="mbgo">결과 ▲</span></button>
+<footer class="band"><div class="wrap">
+<nav aria-label="사이트 정보"><a href="/">홈</a><a href="/acquisition-tax/">취득세 계산기</a><a href="/holding-tax/">보유세 계산기</a><a href="/capital-gains-tax/">양도세 계산기</a><a href="/loan-interest/">금리계산기</a><a href="/guide/">세금 가이드</a><a href="/about/">사이트 소개</a><a href="/privacy/">개인정보처리방침</a><a href="/terms/">이용약관</a><a href="/contact/">문의</a></nav>
+<p>아파트세금계산기는 참고용 추정치를 제공합니다. 실제 세액은 세무서·지자체 고지와 세무 전문가 상담으로 확인하세요. 기준: 2026년 11월 현행 세법, 2026년 세제개편안(정부안). 마지막 업데이트 2026-11-27.</p>
+<p>© 2026 아파트세금계산기</p></div></footer>
+<script src="/assets/app.js?v=2026-11-27"></script>
+</body></html>
