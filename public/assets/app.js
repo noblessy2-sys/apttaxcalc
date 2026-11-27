@@ -186,6 +186,7 @@ function shModal(img,fname,url,copied){
   document.querySelector('.shrmodal')?.remove();
   const m=document.createElement('div');m.className='shrmodal';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');m.setAttribute('aria-label','결과 공유');
   m.innerHTML=`<div class="shrbox"><img alt="계산 결과 이미지" src="${img}"><p class="hint">${copied?'<b>링크는 복사해 뒀어요.</b> ':''}${shTouch()?'이미지를 길게 눌러 저장하고, 대화창에 링크를 붙여넣어 함께 보내 보세요.':'이미지를 저장해서 카톡·블로그에 올리고, 링크도 함께 붙여넣어 보세요.'}</p>
+    ${shKakao.err?`<p class="hint" style="font-size:12px;opacity:.75">카카오톡 공유를 쓰지 못했어요: ${String(shKakao.err).replace(/[<>&]/g,'').slice(0,160)}</p>`:''}
     <div class="shrbtns"><a class="shrb pri" download="${fname}" href="${img}">이미지 저장</a><button type="button" class="shrb" data-cp>링크 복사</button><button type="button" class="shrb" data-x>닫기</button></div></div>`;
   m.addEventListener('click',async e=>{if(e.target===m||e.target.closest('[data-x]')){m.remove();return}
     if(e.target.closest('[data-cp]'))shToast(await shCopy(url)?'링크를 복사했어요':'복사하지 못했어요. 주소창의 링크를 복사해 주세요')});
@@ -194,14 +195,17 @@ function shModal(img,fname,url,copied){
 }
 /* 카카오톡: 메시지 하나에 결과 사진 + 버튼(링크). 키가 없거나 실패하면 false */
 async function shKakao(c,url){
-  if(!KKEY||!window.Kakao||!Kakao.Share)return false;
+  shKakao.err='';
+  if(!KKEY)return false;
+  if(!window.Kakao||!Kakao.Share){shKakao.err='카카오 SDK를 불러오지 못했어요';return false}
   try{if(!Kakao.isInitialized())Kakao.init(KKEY);
     const file=new File([shBlob(shDrawSq(c).toDataURL('image/png'))],'apttaxcalc.png',{type:'image/png'});
-    const r=await Kakao.Share.uploadImage({file:[file]}),base=location.origin+location.pathname;
+    let files=[file];try{const dt=new DataTransfer();dt.items.add(file);files=dt.files}catch(x){} /* 카카오 예제처럼 FileList로 */
+    const r=await Kakao.Share.uploadImage({file:files}),base=location.origin+location.pathname;
     Kakao.Share.sendDefault({objectType:'feed',
       content:{title:`${c.title} ${c.big}`,description:c.label,imageUrl:r.infos.original.url,imageWidth:1080,imageHeight:1080,link:{mobileWebUrl:url,webUrl:url}},
       buttons:[{title:'결과 자세히 보기',link:{mobileWebUrl:url,webUrl:url}},{title:'내 세금 계산하기',link:{mobileWebUrl:base,webUrl:base}}]});
-    return true}catch(e){console.warn('kakao share',e);return false}
+    return true}catch(e){console.warn('kakao share',e);shKakao.err=(e&&(e.message||e.msg||e.code||JSON.stringify(e)))||'알 수 없는 오류';return false}
 }
 /* 공유 버튼 하나: 카카오 연결돼 있으면 카톡 메시지(사진+링크), 아니면 사진 공유 + 링크 자동 복사 */
 async function shAll(btn){
