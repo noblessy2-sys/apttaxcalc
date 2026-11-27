@@ -183,6 +183,20 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;bac
 .ovinfo{margin-top:10px;padding:9px 12px;border-radius:10px;background:var(--soft);border-left:3px solid var(--or);font-size:13.5px;line-height:1.55;color:var(--ink)}
 .ovinfo b{color:var(--or)}
 
+/* 공유 버튼·이미지 창 */
+.shr{display:flex;gap:8px;margin:12px 0 6px}
+.shrb{font:inherit;font-size:15px;font-weight:700;min-height:48px;padding:0 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;flex:1;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap}
+.shrb.pri{background:linear-gradient(90deg,#ff6a2b,#ff4f8b);color:#fff;border:0;flex:1.5}
+.shrb:focus-visible{outline:3px solid var(--pk);outline-offset:2px}
+.shrnote{margin-top:16px}.shrnote p{margin:0;padding:12px 16px;border-radius:12px;background:var(--soft);border:1.5px solid var(--line);font-size:15px;line-height:1.5}
+.shrtoast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,16px);background:#2a1a14;color:#fff;padding:12px 18px;border-radius:12px;font-size:14.5px;line-height:1.45;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;width:max-content;max-width:calc(100vw - 32px);text-align:center}
+.shrtoast.on{opacity:1;transform:translate(-50%,0)}
+.shrmodal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:70;display:flex;align-items:center;justify-content:center;padding:16px}
+.shrbox{background:var(--card);border-radius:20px;padding:16px;max-width:440px;width:100%;max-height:calc(100dvh - 32px);overflow:auto}
+.shrbox img{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line)}
+.shrbox .hint{margin:10px 2px}
+.shrbtns{display:flex;gap:8px}.shrbtns .shrb{flex:1}.shrbtns .shrb.pri{flex:1.3}
+
 header.top .brand{display:inline-block;color:#fff;text-decoration:none;font-weight:700;font-size:14px;opacity:.95;margin-bottom:6px;padding:4px 0}
 .crumb{font-size:13px;color:var(--mute);margin:0 0 6px}.crumb a{color:var(--mute)}
 .prose{max-width:780px;margin:0 auto}

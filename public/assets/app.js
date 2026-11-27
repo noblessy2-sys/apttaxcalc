@@ -91,6 +91,117 @@ const rowsHtml=rs=>rs.map(([l,v,c])=>`<div class="row${c?' '+c:''}"><span>${l}</
 const isAdj=r=>r!=='etc';
 let MBF=null,MBT=null;
 function mbar(){if(!MBF||!$('mbar'))return;const [l,v]=MBF();$('mbL').textContent=l;$('mbV').textContent=v}
+
+/* ===== 공유: 조건을 담은 링크 + 결과 이미지 =====
+   - 링크: ?s= 뒤에 계산 조건(숫자·선택값만)을 base64url(JSON)로 담음. 아파트 이름·주소는 넣지 않음.
+   - 링크로 열면 받은 사람이 값을 바꾸기 전까지 그 사람 기존 저장값을 덮어쓰지 않음(SHRO).
+   - 각 계산기 블록이 SHP={slug,state(),card()}를 등록하고 shMount()로 버튼을 붙임 (split.py 참고). */
+const SHR=(()=>{try{const q=new URLSearchParams(location.search).get('s');if(!q||q.length>4000)return null;
+  const b=atob(q.replace(/-/g,'+').replace(/_/g,'/'));const o=JSON.parse(new TextDecoder().decode(Uint8Array.from(b,c=>c.charCodeAt(0))));
+  return o&&typeof o==='object'&&!Array.isArray(o)?o:null}catch(e){return null}})();
+let SHRO=false,SHA=false,SHP=null,OB=null;
+function SAVE(k,v){if(!SHRO)localStorage.setItem(k,v)}
+const SN=(v,a,b,d)=>{v=typeof v==='number'?v:NaN;return Number.isFinite(v)&&v>=a&&v<=b?v:d};
+const SE=(v,arr,d)=>arr.includes(v)?v:d;
+const SBo=v=>v===1||v===true;
+const SDt=v=>typeof v==='string'&&v.length<=20?v:null; /* 날짜 칸은 입력값 그대로 (화면엔 value·esc로만 들어감) */
+function shEnc(o){const by=new TextEncoder().encode(JSON.stringify(o));let s='';for(const c of by)s+=String.fromCharCode(c);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function shURL(){return location.origin+location.pathname+'?s='+shEnc(SHP.state())}
+const segTxt=id=>{const b=$(id)&&$(id).querySelector('[aria-pressed="true"]');return b?(b.childNodes[0]||b).textContent.trim():''};
+const domRows=sel=>[...document.querySelectorAll(sel)].map(r=>{const s=r.querySelector('span'),b=r.querySelector('b');return [s?s.textContent.trim():'',b?b.textContent.trim():'']}).filter(r=>r[0]);
+
+/* ---- 결과 이미지 (1080px 폭, 항상 밝은 화면) ---- */
+const SHF='"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif';
+function shWrap(x,t,w){const out=[];
+  for(const para of String(t).split('\n')){let line='';
+    for(const word of para.split(/(?<= )/)){const tl=line+word;
+      if(x.measureText(tl.trimEnd()).width<=w){line=tl;continue}
+      if(line.trim()){out.push(line.trimEnd());line=''}
+      for(const ch of word){if(x.measureText((line+ch).trimEnd()).width>w&&line.trim()){out.push(line.trimEnd());line=''}line+=ch}}
+    out.push(line.trimEnd())}
+  return out}
+function shDraw(c){
+  const W=1080,P=64,CP=56,CW=W-P*2,IW=CW-CP*2,top=230,L=P+CP,R=P+CP+IW;
+  const lay=(x,dry)=>{
+    const f=(wt,sz)=>{x.font=`${wt} ${sz}px ${SHF}`};
+    const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
+    const T=(t,X,Y)=>{if(!dry)x.fillText(t,X,Y)};
+    let y=top+CP+34;
+    x.fillStyle='#6f625b';f(700,32);T(c.label,L,y);
+    y+=118;let bs=110;f(900,bs);while(x.measureText(c.big).width>IW&&bs>50){bs-=4;f(900,bs)}
+    x.fillStyle='#f2540e';T(c.big,L,y);y+=12;
+    x.fillStyle='#6f625b';f(500,32);for(const l of (c.sub?shWrap(x,c.sub,IW):[])){y+=46;T(l,L,y)}
+    y+=28;
+    if((c.rows||[]).length){if(!dry){x.fillStyle='#efe3dc';x.fillRect(L,y,IW,3)}y+=8;
+      for(const [l,v] of c.rows){y+=48;f(500,32);x.fillStyle='#1d1714';let lt=l;while(x.measureText(lt).width>IW*.58&&lt.length>2)lt=lt.slice(0,-2)+'…';T(lt,L,y);
+        f(700,34);x.textAlign='right';let vs=34;while(x.measureText(v).width>IW*.42&&vs>22){vs-=2;f(700,vs)}T(v,R,y);x.textAlign='left';y+=18}
+      y+=14}
+    f(500,30);const condL=(c.conds||[]).flatMap(t=>shWrap(x,'· '+t,IW-48));
+    if(condL.length){y+=14;const bh=60+condL.length*44;if(!dry){x.fillStyle='#fff4ee';rr(L,y,IW,bh,24);x.fill()}
+      x.fillStyle='#6f625b';f(700,28);T('계산 조건',L+24,y+46);f(500,30);x.fillStyle='#1d1714';let yy=y+46;for(const l of condL){yy+=44;T(l,L+24,yy)}y+=bh}
+    return y+CP-8};
+  const cv=document.createElement('canvas'),x=cv.getContext('2d');
+  const cardH=lay(x,true)-top,H=top+cardH+190;
+  cv.width=W;cv.height=H;
+  const f=(wt,sz)=>{x.font=`${wt} ${sz}px ${SHF}`};
+  x.fillStyle='#fff4ee';x.fillRect(0,0,W,H);
+  const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,'#ff6a2b');g.addColorStop(1,'#ff4f8b');x.fillStyle=g;x.fillRect(0,0,W,340);
+  x.fillStyle='rgba(255,255,255,.92)';f(700,34);x.fillText('아파트세금계산기',P,88);
+  x.fillStyle='#fff';f(900,62);x.fillText(c.title,P,170);
+  x.save();x.shadowColor='rgba(236,47,115,.22)';x.shadowBlur=50;x.shadowOffsetY=18;x.fillStyle='#fff';
+  x.beginPath();x.roundRect?x.roundRect(P,top,CW,cardH,36):x.rect(P,top,CW,cardH);x.fill();x.restore();
+  lay(x,false);
+  const fy=top+cardH+86;x.fillStyle='#f2540e';f(900,44);x.fillText('apttaxcalc.com',P,fy);const aw=x.measureText('apttaxcalc.com').width;
+  x.fillStyle='#1d1714';f(500,32);x.fillText('  내 조건으로 계산해 보세요',P+aw,fy);
+  const d=new Date(),ds=`${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+  x.fillStyle='#6f625b';f(500,25);x.fillText(`참고용 추정치예요. 실제 세액은 고지서·세무 전문가로 확인하세요. (${ds} 계산)`,P,fy+54);
+  return cv;
+}
+function shBlob(url){const b=atob(url.split(',')[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:'image/png'})}
+function shToast(t){let e=document.querySelector('.shrtoast');if(!e){e=document.createElement('div');e.className='shrtoast';e.setAttribute('role','status');document.body.append(e)}e.textContent=t;e.classList.add('on');clearTimeout(shToast.t);shToast.t=setTimeout(()=>e.classList.remove('on'),2200)}
+async function shCopy(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.append(a);a.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}a.remove();return ok}}
+const shTouch=()=>matchMedia('(pointer:coarse)').matches;
+function shModal(img,fname,url){
+  document.querySelector('.shrmodal')?.remove();
+  const m=document.createElement('div');m.className='shrmodal';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');m.setAttribute('aria-label','결과 이미지');
+  m.innerHTML=`<div class="shrbox"><img alt="계산 결과 이미지" src="${img}"><p class="hint">${shTouch()?'이미지를 길게 눌러 저장하거나, 아래 버튼을 눌러 주세요.':'이미지를 저장해서 카톡·블로그에 올리고, 링크도 함께 보내 보세요.'}</p>
+    <div class="shrbtns"><a class="shrb pri" download="${fname}" href="${img}">이미지 저장</a><button type="button" class="shrb" data-cp>링크 복사</button><button type="button" class="shrb" data-x>닫기</button></div></div>`;
+  m.addEventListener('click',async e=>{if(e.target===m||e.target.closest('[data-x]')){m.remove();return}
+    if(e.target.closest('[data-cp]'))shToast(await shCopy(url)?'링크를 복사했어요':'복사하지 못했어요. 주소창의 링크를 복사해 주세요')});
+  document.addEventListener('keydown',function k(e){if(e.key==='Escape'){m.remove();document.removeEventListener('keydown',k)}});
+  document.body.append(m);m.querySelector('[data-x]').focus();
+}
+async function shImage(){
+  const c=SHP.card(),url=shURL(),cv=shDraw(c),img=cv.toDataURL('image/png'),fname=`apttaxcalc-${SHP.slug}.png`;
+  try{const file=new File([shBlob(img)],fname,{type:'image/png'});
+    if(shTouch()&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'아파트세금계산기',text:`${c.title} ${c.big}\n${url}`});return}}
+  catch(e){if(e&&e.name==='AbortError')return}
+  shModal(img,fname,url);
+}
+async function shLink(){
+  const c=SHP.card(),url=shURL();
+  if(shTouch()&&navigator.share){try{await navigator.share({title:'아파트세금계산기',text:`${c.title} ${c.label}: ${c.big}`,url});return}catch(e){if(e&&e.name==='AbortError')return}}
+  shToast(await shCopy(url)?'링크를 복사했어요. 받은 사람도 같은 결과를 볼 수 있어요':'복사하지 못했어요. 다시 눌러 주세요');
+}
+function shMount(papers){
+  for(const p of papers){if(!p||p.nextElementSibling?.classList.contains('shr'))continue;
+    const d=document.createElement('div');d.className='shr';
+    d.innerHTML=`<button type="button" class="shrb pri" data-shimg>결과 이미지로 공유</button><button type="button" class="shrb" data-shlink>${shTouch()?'링크 공유':'링크 복사'}</button>`;
+    d.addEventListener('click',e=>{if(e.target.closest('[data-shimg]'))shImage();else if(e.target.closest('[data-shlink]'))shLink()});
+    p.after(d)}
+}
+function shInit(){
+  if(!SHA)return;
+  SHRO=true;
+  const first=document.querySelector('main .view .band');
+  if(first){const n=document.createElement('div');n.className='wrap shrnote';n.innerHTML='<p><b>공유받은 계산 결과예요.</b> 값을 바꾸면 내 조건으로 다시 계산돼요.</p>';first.before(n)}
+  const rel=e=>{if(!SHRO)return;const t=e.target;
+    if(e.type==='click'){const b=t.closest&&t.closest('button');if(!b||b.closest('.shr,.shrmodal')||b.id==='mbar'||b.id==='lkToggle')return}
+    SHRO=false;try{history.replaceState(null,'',location.pathname+location.hash)}catch(x){}document.querySelector('.shrnote')?.remove()};
+  for(const ev of ['input','change','click'])document.addEventListener(ev,rel,true);
+}
+window.__share={url:()=>SHP&&shURL(),card:()=>SHP&&SHP.card(),draw:c=>shDraw(c),state:()=>SHP&&SHP.state(),ro:()=>SHRO};
+
 if($('apts')){
 /* ---------- UI ---------- */
 
@@ -107,6 +218,11 @@ let st, year=2026;
 try{st=JSON.parse(localStorage.getItem('aptTax1'))}catch(e){}
 if(!st||!Array.isArray(st.apts))st={ageA:0,ageB:0,apts:[mk(15*E8,{hold:0,res:0})]};
 try{year=+localStorage.getItem('aptTaxY')||2026}catch(e){}
+if(SHR&&SHR.k==='h'&&Array.isArray(SHR.a)&&SHR.a.length&&SHR.a.length<=12){
+  const ov={};if(SHR.ov&&typeof SHR.ov==='object')for(const k of ['real','propR','jongR']){const v=SN(SHR.ov[k],20,100,null);if(v!=null)ov[k]=v}
+  st={ageA:SN(SHR.aA,0,120,0),ageB:SN(SHR.aB,0,120,0),ov,apts:SHR.a.map(r=>Array.isArray(r)?mk(SN(r[0],0,1e13,0),{mode:SE(r[1],['pub','mkt'],'pub'),owner:SE(r[2],['A','B','J'],'A'),sa:SN(r[3],1,99,50),region:SE(r[4],['seoul','gg','etc'],undefined),live:SBo(r[5]),adj:SBo(r[6]),hold:SN(r[7],0,100,0),res:SN(r[8],0,100,0)}):mk(0))};
+  const sa=SE(SHR.sa,['seoul','all'],null),sn=SE(SHR.sn,[1,2,3],null),sc=SN(SHR.sc,-49.99,99.99,null);if(sa)st.simArea=sa;if(sn)st.simN=sn;if(sc!=null)st.simCustom=sc;
+  year=SE(SHR.y,Object.keys(YR).map(Number),2026);SHA=true;SHRO=true}
 
 $('years').innerHTML=Object.keys(YR).map(k=>`<button type="button" data-y="${k}">${k==2026?'올해 (2026)':k+' 개편안'}</button>`).join('');
 const YRS=[[0,'5년 미만'],[5,'5~10년'],[10,'10~15년'],[15,'15년 이상']];
@@ -169,7 +285,7 @@ function drawApts(){
   const n=st.apts.length;for(const b of $('count').children)b.setAttribute('aria-pressed',n>=4?b.dataset.n==='4':+b.dataset.n===n);
 }
 $('apts').addEventListener('input',e=>{
-  if(e.target.dataset.lk){st[e.target.dataset.lk]=e.target.value;try{localStorage.setItem('aptTax1',JSON.stringify(st))}catch(x){}return}
+  if(e.target.dataset.lk){st[e.target.dataset.lk]=e.target.value;try{SAVE('aptTax1',JSON.stringify(st))}catch(x){}return}
   const el=e.target,k=el.dataset.k,box=el.closest('.apt');if(!k||!box)return;
   const a=st.apts[+box.dataset.i];
   if(k==='price'){const v=parseFloat(el.value)||0;a.price=v*E8*(a.mode==='mkt'?.69:1);box.querySelector('.hint').textContent=a.mode==='mkt'?'공시가격 약 '+eok(a.price)+'로 계산 (시세의 69%)':eok(a.price)}
@@ -180,7 +296,7 @@ $('apts').addEventListener('input',e=>{
   else if(k==='sa'){a.sa=Math.min(99,Math.max(1,parseInt(el.value)||50));const sb=box.querySelector('.share .sub');if(sb)sb.textContent='배우자 '+(100-a.sa)+'%';for(const b of box.querySelectorAll('[data-sa]'))b.setAttribute('aria-pressed',+b.dataset.sa===a.sa)}
   render();
 });
-$('lookbox').addEventListener('input',e=>{const k=e.target.dataset.lk;if(k){st[k]=e.target.value;try{localStorage.setItem('aptTax1',JSON.stringify(st))}catch(x){}}});
+$('lookbox').addEventListener('input',e=>{const k=e.target.dataset.lk;if(k){st[k]=e.target.value;try{SAVE('aptTax1',JSON.stringify(st))}catch(x){}}});
 $('lookbox').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.lk){e.preventDefault();lookup()}});
 $('lookbox').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.id==='lkToggle'){st.lopen=!st.lopen;drawLook();if(st.lopen)$('lkQ').focus();return}
@@ -201,7 +317,7 @@ $('count').onclick=e=>{const n=+e.target.dataset.n;if(!n)return;
   while(st.apts.length<n)st.apts.push(mk(5*E8,{live:false,hold:0,res:0}));
   drawApts();render()};
 $('addApt').onclick=()=>{st.apts.push(mk(5*E8,{live:false,hold:0,res:0}));drawApts();render()};
-$('years').onclick=e=>{const y=e.target.dataset.y;if(!y)return;year=+y;try{localStorage.setItem('aptTaxY',y)}catch(x){}render()};
+$('years').onclick=e=>{const y=e.target.dataset.y;if(!y)return;year=+y;try{SAVE('aptTaxY',y)}catch(x){}render()};
 $('simArea').onclick=e=>{const v=e.target.closest('button')?.dataset.v;if(v){st.simArea=v;render()}};
 $('simN').onclick=e=>{const v=e.target.closest('button')?.dataset.v;if(v){st.simN=+v;render()}};
 $('simTbl').addEventListener('change',e=>{if(e.target.id==='simCustom'){const v=parseFloat(e.target.value);if(!isNaN(v)&&v>-50&&v<100){st.simCustom=v;render()}}});
@@ -254,7 +370,7 @@ function renderOv(r){
   const on=changed||(ov.real&&ov.real!==69);$('pkind').textContent=YR[year].kind+(on?' · 바꾼 비율 적용 중':'');
 }
 function render(){
-  try{localStorage.setItem('aptTax1',JSON.stringify(st))}catch(e){}
+  try{SAVE('aptTax1',JSON.stringify(st))}catch(e){}
   for(const b of $('years').children)b.setAttribute('aria-pressed',+b.dataset.y===year);
   const R={};for(const y of Object.keys(YR))R[y]=compute(st,+y);
   const r=R[year], base=R[2026];
@@ -328,6 +444,18 @@ quick(1);
 syncAges();drawApts();render();
 
 MBF=()=>['1년 보유세',$('total').textContent];
+SHP={slug:'holding-tax',
+  state:()=>{const o={k:'h',y:year,aA:+st.ageA||0,aB:+st.ageB||0,a:st.apts.map(a=>[a.price,a.mode,a.owner,a.sa??50,a.region??null,a.live?1:0,a.adj?1:0,+a.hold||0,+a.res||0])};
+    if(st.ov&&Object.keys(st.ov).length)o.ov=st.ov;if(st.simArea)o.sa=st.simArea;if(st.simN)o.sn=st.simN;if(st.simCustom!=null)o.sc=st.simCustom;return o},
+  card:()=>{const multi=st.apts.length>1,own=a=>a.owner==='J'?`부부 공동 ${a.sa??50}:${100-(a.sa??50)}`:a.owner==='B'?'배우자 명의':'본인 명의',rg={seoul:'서울',gg:'경기 규제',etc:'그 외'},yl=v=>(YRS.find(([k])=>k==v)||[0,''])[1];
+    const conds=st.apts.slice(0,4).map((a,i)=>`${multi?(i+1)+'번째: ':''}공시가격 ${eok(a.price)}${a.mode==='mkt'?` (시세 ${eok(a.price/.69)}로 추정)`:''} · ${a.live?'실거주':'비거주'} · ${own(a)}${multi?' · '+rg[a.region||(a.adj?'seoul':'etc')]:''}`);
+    if(st.apts.length>4)conds.push(`외 ${st.apts.length-4}채`);
+    if(!multi){const a=st.apts[0];if(a.hold||a.res)conds.push(`보유 ${yl(a.hold)} · 거주 ${yl(a.res)}`)}
+    if(+st.ageA||+st.ageB)conds.push('나이 '+[+st.ageA?'본인 '+st.ageA+'세':'',+st.ageB?'배우자 '+st.ageB+'세':''].filter(Boolean).join(' · '));
+    const ov=st.ov||{},ok=[['real','현실화율'],['propR','재산세 공정시장가액비율'],['jongR','종부세 공정시장가액비율']].filter(([k])=>ov[k]!=null);if(ok.length)conds.push('바꾼 비율: '+ok.map(([k,n])=>`${n} ${ov[k]}%`).join(', '));
+    const sub=[$('monthly').textContent,$('delta').hidden?'':$('delta').textContent].filter(Boolean).join(' · ');
+    return {title:'아파트 보유세',label:$('pyear').textContent,big:$('total').textContent,sub,rows:[['재산세 (교육세·도시지역분 포함)',$('propT').textContent],['종부세 (농특세 포함)',$('jongT').textContent]],conds}}};
+shMount([$('total').closest('.paper')]);
 }
 if($('bPrice')){
 /* ===== 취득세 ===== */
@@ -343,9 +471,10 @@ function acq(o){
 }
 const B={price:9*E8,n:1,temp:false,reg:'seoul',big:false,first:false};
 try{Object.assign(B,JSON.parse(localStorage.getItem('aptTaxB'))||{})}catch(e){}
+if(SHR&&SHR.k==='b'){Object.assign(B,{price:SN(SHR.p,0,1e13,9*E8),n:SE(SHR.n,[1,2,3,4],1),temp:SBo(SHR.t),reg:SE(SHR.r,['seoul','gg','etc'],'seoul'),big:SBo(SHR.g),first:SBo(SHR.f)});SHA=true;SHRO=true}
 $('bPrice').value=+(B.price/E8).toFixed(2);$('bTemp').checked=B.temp;$('bFirst').checked=B.first;
 function renderB(){
-  try{localStorage.setItem('aptTaxB',JSON.stringify(B))}catch(e){}
+  try{SAVE('aptTaxB',JSON.stringify(B))}catch(e){}
   segSet('bN',B.n);segSet('bReg',B.reg);segSet('bArea',B.big?1:0);
   $('bTempL').hidden=B.n!==2;$('bFirstL').hidden=B.n!==1;
   $('bPriceH').textContent=eok(B.price);
@@ -375,6 +504,11 @@ $('bFirst').onchange=e=>{B.first=e.target.checked;renderB()};
 
 
 window.__calc.acq=acq;renderB();MBF=()=>['살 때 세금 합계',$('bTotal').textContent];
+SHP={slug:'acquisition-tax',
+  state:()=>({k:'b',p:B.price,n:B.n,t:B.temp?1:0,r:B.reg,g:B.big?1:0,f:B.first?1:0}),
+  card:()=>({title:'아파트 취득세',label:'살 때 내는 세금 합계',big:$('bTotal').textContent,sub:$('bPct').textContent,rows:domRows('#bRows .row'),
+    conds:[`매매가 ${eok(B.price)} · 사고 나면 ${segTxt('bN')} · ${segTxt('bReg')} · ${segTxt('bArea')}`,...(B.n===2&&B.temp?['이사 때문에 잠깐 2채 (일시적 2주택)']:[]),...(B.n===1&&B.first?['생애최초 감면 적용']:[])]})};
+shMount([$('bTotal').closest('.paper')]);
 }
 if($('sSale')){
 /* ===== 양도세 ===== */
@@ -462,13 +596,18 @@ const TODAY={y:2026,mo:11,d:0,exact:false};
 const S={mode:'one',saleDate:'2026-12',reform:false,sale:15*E8,buy:8*E8,cost:0,buyDate:'2018-06',res:5,n:1,temp:false,loc:'s21',
   list:[{name:'A 아파트',buy:6*E8,sale:14*E8,buyDate:'2015-03',res:10,loc:'s4'},{name:'B 아파트',buy:5*E8,sale:9*E8,buyDate:'2020-06',res:0,loc:'s21'},{name:'C 아파트',buy:3*E8,sale:4*E8,buyDate:'2021-09',res:0,loc:'etc'}],keep:true};
 try{const sv=JSON.parse(localStorage.getItem('aptTaxS2'));if(sv)Object.assign(S,sv)}catch(e){}
+if(SHR&&SHR.k==='s'){const LK=Object.keys(LOC),m=SE(SHR.m,['one','order'],null),okL=Array.isArray(SHR.l)&&SHR.l.length>=2&&SHR.l.length<=5&&SHR.l.every(Array.isArray);
+  if(m==='one'||(m==='order'&&okL)){S.mode=m;S.saleDate=SDt(SHR.sd)??'2026-12';S.reform=SBo(SHR.rf);
+    if(m==='one')Object.assign(S,{sale:SN(SHR.sl,0,1e13,0),buy:SN(SHR.by,0,1e13,0),cost:SN(SHR.c,0,1e12,0),buyDate:SDt(SHR.bd)??'',res:SN(SHR.rs,0,100,0),n:SE(SHR.n,[1,2,3],1),temp:SBo(SHR.t),loc:SE(SHR.lc,LK,'etc')});
+    else{S.keep=SBo(SHR.kp);S.list=SHR.l.map((h,i)=>({name:String.fromCharCode(65+i)+' 아파트',buy:SN(h[0],0,1e13,0),sale:SN(h[1],0,1e13,0),buyDate:SDt(h[2])??'',res:SN(h[3],0,100,0),loc:SE(h[4],LK,'etc')}))}
+    SHA=true;SHRO=true}}
 const locOpts=v=>LOCS.map(([k,n])=>`<option value="${k}"${k===v?' selected':''}>${n}</option>`).join('');
 $('sLoc').innerHTML=locOpts(S.loc);
 $('sSale').value=+(S.sale/E8).toFixed(2);$('sBuy').value=+(S.buy/E8).toFixed(2);$('sCost').value=S.cost/1e4||0;
 $('sBuyDate').value=S.buyDate;$('sRes').value=S.res;$('sTemp').checked=S.temp;$('oKeep').checked=S.keep;$('sSaleDate').value=S.saleDate;$('sReform').checked=S.reform;
 function saleD(){const d=pDate(S.saleDate);if(!d)return null;return key(d)<key(TODAY)?null:d}
 function renderS(){
-  try{localStorage.setItem('aptTaxS2',JSON.stringify(S))}catch(e){}
+  try{SAVE('aptTaxS2',JSON.stringify(S))}catch(e){}
   segSet('sMode',S.mode);segSet('sN',S.n);
   $('sOne').hidden=S.mode!=='one';$('sOrder').hidden=S.mode!=='order';$('sTempL').hidden=S.n!==2;
   $('sLocH').textContent='조정대상지역 기간: '+locHist(S.loc);
@@ -525,7 +664,7 @@ function calcOrder(){
   }
   if(bad){$('oBest').innerHTML=`<div class="tot"><div class="sub">${esc(bad)}</div></div>`;$('oTbl').innerHTML='';$('oNotes').innerHTML='';return}
   const seen=new Set(),U=res.filter(x=>{const k=x.sold.join('-')+'|'+x.kept;if(seen.has(k))return false;seen.add(k);return true}).sort((a,b)=>a.tot-b.tot);
-  const best=U[0],worst=U[U.length-1], nm=i=>esc(L[i].name||'아파트 '+(i+1));
+  OB={best:U[0],worst:U[U.length-1]};const best=U[0],worst=U[U.length-1], nm=i=>esc(L[i].name||'아파트 '+(i+1));
   $('oBest').innerHTML=`<div class="ph"><span>세금이 가장 적은 순서</span><span>${S.reform?'개편안 통과 가정':'현행 세법'}</span></div>
     <div class="tot"><div class="steps">${best.steps.map((s,k)=>`<span class="st"><i>${k+1}</i>${nm(s.i)}<small>${won(s.r.total)}</small></span>`).join('<span class="arr">→</span>')}${best.kept!=null?`<span class="arr">·</span><span class="st keep"><i>✓</i>${nm(best.kept)}<small>계속 보유</small></span>`:''}</div>
     <div class="sub" style="margin-top:14px">총 양도세 (지방소득세 포함)</div><div class="big">${won(best.tot)}</div>
@@ -547,13 +686,24 @@ $('oKeep').onchange=e=>{S.keep=e.target.checked;renderS()};
 $('oAdd').onclick=()=>{if(S.list.length>=5)return;S.list.push({name:String.fromCharCode(65+S.list.length)+' 아파트',buy:3*E8,sale:4*E8,buyDate:'2022-01',res:0,loc:'etc'});renderS()};
 $('oList').addEventListener('input',e=>{const f=e.target.dataset.f,box=e.target.closest('[data-o]');if(!f||!box)return;const h=S.list[+box.dataset.o];
   if(f==='name'||f==='buyDate'||f==='loc')h[f]=e.target.value;else h[f]=(parseFloat(e.target.value)||0)*(f==='buy'||f==='sale'?E8:1);
-  try{localStorage.setItem('aptTaxS2',JSON.stringify(S))}catch(x){}calcOrder()});
+  try{SAVE('aptTaxS2',JSON.stringify(S))}catch(x){}calcOrder()});
 $('oList').addEventListener('click',e=>{const b=e.target.closest('button');const box=b?.closest('[data-o]');if(!box)return;const i=+box.dataset.o;
   if(b.dataset.del!==undefined){S.list.splice(i,1);renderS()}});
 window.__calc.cgt=cgt;window.__calc.prep=prep;window.__calc.adjAt=adjAt;window.__calc.pDate=pDate;window.__calc.fullYears=fullYears;
 
 
 renderS();MBF=()=>S.mode==='order'?['가장 적은 순서 양도세',($('oBest').querySelector('.big')||{}).textContent||'—']:['낼 양도세',$('sTotal').textContent];MBT=()=>S.mode==='order'?$('oBest'):$('sOne').querySelector('.paper');
+SHP={slug:'capital-gains-tax',
+  state:()=>S.mode==='order'?{k:'s',m:'order',sd:S.saleDate,rf:S.reform?1:0,kp:S.keep?1:0,l:S.list.map(h=>[h.buy,h.sale,h.buyDate,h.res,h.loc])}
+    :{k:'s',m:'one',sd:S.saleDate,rf:S.reform?1:0,sl:S.sale,by:S.buy,c:S.cost,bd:S.buyDate,rs:S.res,n:S.n,t:S.temp?1:0,lc:S.loc},
+  card:()=>{const ln=k=>(LOC[k]||LOC.etc).n;
+    if(S.mode==='order'){const nm=i=>String.fromCharCode(65+i)+' 아파트',bg=$('oBest').querySelector('.big'),b=bg&&OB?OB.best:null;
+      return {title:'아파트 양도세',label:'세금이 가장 적은 파는 순서 (지방소득세 포함)',big:bg?bg.textContent:'—',sub:b&&OB.worst.tot>b.tot?`가장 비싼 순서보다 ${won(OB.worst.tot-b.tot)} 아껴요`:'',
+        rows:b?[...b.steps.map((s,k)=>[`${k+1}. ${nm(s.i)} 팔기`,won(s.r.total)]),...(b.kept!=null?[[nm(b.kept),'계속 보유']]:[])]:[],
+        conds:[...S.list.map((h,i)=>`${nm(i)}: ${eok(h.buy)}에 사서 ${eok(h.sale)}에 팔기 · ${h.buyDate||'?'} 취득 · 거주 ${h.res}년 · ${ln(h.loc)}`),`팔 시기 ${S.saleDate}${S.keep?' · 마지막 한 채는 계속 보유':''}${S.reform?' · 개편안 통과 가정':''}`]}}
+    return {title:'아파트 양도세',label:'낼 양도세 (지방소득세 포함)',big:$('sTotal').textContent,sub:$('sNet').textContent,rows:domRows('#sRows .row'),
+      conds:[`판 가격 ${eok(S.sale)} · 산 가격 ${eok(S.buy)}${S.cost?' · 필요경비 '+eok(S.cost):''}`,`산 날짜 ${S.buyDate||'?'} · 팔 시기 ${S.saleDate} · 거주 ${S.res}년`,`${ln(S.loc)} · 팔 때 우리 집 ${segTxt('sN')}${S.n===2&&S.temp?' (이사로 잠깐 2채)':''}`,...(S.reform?['정부 개편안 통과 가정']:[]),$('sHoldH').textContent].filter(Boolean)}}};
+shMount([$('sTotal').closest('.paper'),$('oBest')]);
 }
 if($('rBal')){
 /* ===== 금리 계산기 ===== */
@@ -564,9 +714,10 @@ function loan(P,ratePct,years,method){
 }
 const RS={bal:6.5e8,rate:4.75,delta:.5,years:30,method:'eq'};
 try{Object.assign(RS,JSON.parse(localStorage.getItem('aptTaxR'))||{})}catch(e){}
+if(SHR&&SHR.k==='r'){Object.assign(RS,{bal:SN(SHR.b,1,1e11,6.5e8),rate:SN(SHR.r,0,30,4.75),delta:SE(SHR.d,[...$('rDelta').children].map(b=>+b.dataset.v),.5),years:SE(SHR.y,[...$('rYears').children].map(b=>+b.dataset.v),30),method:SE(SHR.m,['eq','pr'],'eq')});SHA=true;SHRO=true}
 const pct=v=>(+v.toFixed(2)).toString();
 function renderR(src){
-  try{localStorage.setItem('aptTaxR',JSON.stringify(RS))}catch(e){}
+  try{SAVE('aptTaxR',JSON.stringify(RS))}catch(e){}
   if(src!=='balN')$('rBalN').value=+(RS.bal/E8).toFixed(2);
   if(src!=='rateN')$('rRateN').value=pct(RS.rate);
   $('rBal').value=Math.min(15,Math.max(.5,RS.bal/E8));$('rRate').value=Math.min(9,Math.max(1,RS.rate));
@@ -597,6 +748,11 @@ window.__calc.loan=loan;
 
 
 renderR();MBF=()=>['한 달 상환액 변화',$('rDiff').textContent];
+SHP={slug:'loan-interest',
+  state:()=>({k:'r',b:RS.bal,r:RS.rate,d:RS.delta,y:RS.years,m:RS.method}),
+  card:()=>({title:'대출 금리 계산',label:$('rLead').textContent,big:$('rDiff').textContent,sub:$('rSub').textContent,rows:[...domRows('#rBars .cbl'),...domRows('#rRows .row')],
+    conds:[`대출 잔액 ${eok(RS.bal)} · 남은 기간 ${RS.years}년 · ${segTxt('rMethod')}`,`금리 ${pct(RS.rate)}% → ${pct(Math.max(0,RS.rate+RS.delta))}%`]})};
+shMount([$('rDiff').closest('.paper')]);
 }
 if($('mbar')){
   if(!MBF)$('mbar').remove();else{
@@ -606,4 +762,5 @@ if($('mbar')){
   document.addEventListener('input',()=>setTimeout(mbar,0));document.addEventListener('click',()=>setTimeout(mbar,0));
   mbar();}
 }
+shInit();
 }
