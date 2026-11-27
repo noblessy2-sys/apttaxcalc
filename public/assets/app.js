@@ -174,7 +174,7 @@ function shModal(img,fname,url){
 async function shImage(){
   const c=SHP.card(),url=shURL(),cv=shDraw(c),img=cv.toDataURL('image/png'),fname=`apttaxcalc-${SHP.slug}.png`;
   try{const file=new File([shBlob(img)],fname,{type:'image/png'});
-    if(shTouch()&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'아파트세금계산기',text:`${c.title} ${c.big}\n${url}`});return}}
+    if(shTouch()&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return /* 글을 같이 넣으면 카톡이 이미지를 빼고 글만 보냄 → 이미지만 */}}
   catch(e){if(e&&e.name==='AbortError')return}
   shModal(img,fname,url);
 }
