@@ -100,6 +100,7 @@ const SHR=(()=>{try{const q=new URLSearchParams(location.search).get('s');if(!q|
   const b=atob(q.replace(/-/g,'+').replace(/_/g,'/'));const o=JSON.parse(new TextDecoder().decode(Uint8Array.from(b,c=>c.charCodeAt(0))));
   return o&&typeof o==='object'&&!Array.isArray(o)?o:null}catch(e){return null}})();
 let SHRO=false,SHA=false,SHP=null,OB=null;
+const KKEY=(document.querySelector('meta[name="kakao-key"]')||{}).content||''; /* build.py의 KAKAO_KEY. 없으면 카카오 공유 대신 사진 공유+링크 복사 */
 function SAVE(k,v){if(!SHRO)localStorage.setItem(k,v)}
 const SN=(v,a,b,d)=>{v=typeof v==='number'?v:NaN;return Number.isFinite(v)&&v>=a&&v<=b?v:d};
 const SE=(v,arr,d)=>arr.includes(v)?v:d;
@@ -157,37 +158,73 @@ function shDraw(c){
   x.fillStyle='#6f625b';f(500,25);x.fillText(`참고용 추정치예요. 실제 세액은 고지서·세무 전문가로 확인하세요. (${ds} 계산)`,P,fy+54);
   return cv;
 }
+function shDrawSq(c){
+  const W=1080,P=64,cv=document.createElement('canvas'),x=cv.getContext('2d');cv.width=W;cv.height=W;
+  const f=(wt,sz)=>{x.font=`${wt} ${sz}px ${SHF}`},fit=(t,w,wt,sz,min)=>{f(wt,sz);while(x.measureText(t).width>w&&sz>min){sz-=2;f(wt,sz)}return sz};
+  const cut=(t,w)=>{if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+'…').width>w)t=t.slice(0,-1);return t+'…'};
+  x.fillStyle='#fff4ee';x.fillRect(0,0,W,W);
+  const g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,'#ff6a2b');g.addColorStop(1,'#ff4f8b');x.fillStyle=g;x.fillRect(0,0,W,320);
+  x.fillStyle='rgba(255,255,255,.92)';f(700,34);x.fillText('아파트세금계산기',P,84);
+  x.fillStyle='#fff';f(900,64);x.fillText(c.title,P,166);
+  const top=214,CW=W-P*2,L=P+52,IW=CW-104,rows=(c.rows||[]).slice(0,3),ch=330+rows.length*66+(rows.length?36:0);
+  x.save();x.shadowColor='rgba(236,47,115,.22)';x.shadowBlur=50;x.shadowOffsetY=18;x.fillStyle='#fff';x.beginPath();x.roundRect?x.roundRect(P,top,CW,ch,36):x.rect(P,top,CW,ch);x.fill();x.restore();
+  let y=top+80;x.fillStyle='#6f625b';f(700,34);x.fillText(cut(c.label,IW),L,y);
+  y+=134;fit(c.big,IW,900,124,56);x.fillStyle='#f2540e';x.fillText(c.big,L,y);
+  if(c.sub){y+=62;x.fillStyle='#6f625b';f(500,32);x.fillText(cut(c.sub,IW),L,y)}
+  if(rows.length){y+=34;x.fillStyle='#efe3dc';x.fillRect(L,y,IW,3);y+=6;
+    for(const [l,v] of rows){y+=58;f(500,33);x.fillStyle='#1d1714';x.fillText(cut(l,IW*.58),L,y);fit(v,IW*.4,700,35,22);x.textAlign='right';x.fillText(v,L+IW,y);x.textAlign='left';y+=8}}
+  const fy=Math.min(985,top+ch+Math.max(110,(1040-(top+ch)-50)/2+40));x.fillStyle='#f2540e';f(900,46);x.fillText('apttaxcalc.com',P,fy);const aw=x.measureText('apttaxcalc.com').width;
+  x.fillStyle='#1d1714';f(500,33);x.fillText('  내 조건으로 계산해 보세요',P+aw,fy);
+  x.fillStyle='#6f625b';f(500,24);x.fillText('참고용 추정치예요. 실제 세액은 고지서·세무 전문가로 확인하세요.',P,fy+50);
+  return cv;
+}
 function shBlob(url){const b=atob(url.split(',')[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:'image/png'})}
 function shToast(t){let e=document.querySelector('.shrtoast');if(!e){e=document.createElement('div');e.className='shrtoast';e.setAttribute('role','status');document.body.append(e)}e.textContent=t;e.classList.add('on');clearTimeout(shToast.t);shToast.t=setTimeout(()=>e.classList.remove('on'),2200)}
 async function shCopy(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.append(a);a.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}a.remove();return ok}}
 const shTouch=()=>matchMedia('(pointer:coarse)').matches;
-function shModal(img,fname,url){
+function shModal(img,fname,url,copied){
   document.querySelector('.shrmodal')?.remove();
-  const m=document.createElement('div');m.className='shrmodal';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');m.setAttribute('aria-label','결과 이미지');
-  m.innerHTML=`<div class="shrbox"><img alt="계산 결과 이미지" src="${img}"><p class="hint">${shTouch()?'이미지를 길게 눌러 저장하거나, 아래 버튼을 눌러 주세요.':'이미지를 저장해서 카톡·블로그에 올리고, 링크도 함께 보내 보세요.'}</p>
+  const m=document.createElement('div');m.className='shrmodal';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');m.setAttribute('aria-label','결과 공유');
+  m.innerHTML=`<div class="shrbox"><img alt="계산 결과 이미지" src="${img}"><p class="hint">${copied?'<b>링크는 복사해 뒀어요.</b> ':''}${shTouch()?'이미지를 길게 눌러 저장하고, 대화창에 링크를 붙여넣어 함께 보내 보세요.':'이미지를 저장해서 카톡·블로그에 올리고, 링크도 함께 붙여넣어 보세요.'}</p>
     <div class="shrbtns"><a class="shrb pri" download="${fname}" href="${img}">이미지 저장</a><button type="button" class="shrb" data-cp>링크 복사</button><button type="button" class="shrb" data-x>닫기</button></div></div>`;
   m.addEventListener('click',async e=>{if(e.target===m||e.target.closest('[data-x]')){m.remove();return}
     if(e.target.closest('[data-cp]'))shToast(await shCopy(url)?'링크를 복사했어요':'복사하지 못했어요. 주소창의 링크를 복사해 주세요')});
   document.addEventListener('keydown',function k(e){if(e.key==='Escape'){m.remove();document.removeEventListener('keydown',k)}});
   document.body.append(m);m.querySelector('[data-x]').focus();
 }
-async function shImage(){
-  const c=SHP.card(),url=shURL(),cv=shDraw(c),img=cv.toDataURL('image/png'),fname=`apttaxcalc-${SHP.slug}.png`;
-  try{const file=new File([shBlob(img)],fname,{type:'image/png'});
-    if(shTouch()&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return /* 글을 같이 넣으면 카톡이 이미지를 빼고 글만 보냄 → 이미지만 */}}
-  catch(e){if(e&&e.name==='AbortError')return}
-  shModal(img,fname,url);
+/* 카카오톡: 메시지 하나에 결과 사진 + 버튼(링크). 키가 없거나 실패하면 false */
+async function shKakao(c,url){
+  if(!KKEY||!window.Kakao||!Kakao.Share)return false;
+  try{if(!Kakao.isInitialized())Kakao.init(KKEY);
+    const file=new File([shBlob(shDrawSq(c).toDataURL('image/png'))],'apttaxcalc.png',{type:'image/png'});
+    const r=await Kakao.Share.uploadImage({file:[file]}),base=location.origin+location.pathname;
+    Kakao.Share.sendDefault({objectType:'feed',
+      content:{title:`${c.title} ${c.big}`,description:c.label,imageUrl:r.infos.original.url,imageWidth:1080,imageHeight:1080,link:{mobileWebUrl:url,webUrl:url}},
+      buttons:[{title:'결과 자세히 보기',link:{mobileWebUrl:url,webUrl:url}},{title:'내 세금 계산하기',link:{mobileWebUrl:base,webUrl:base}}]});
+    return true}catch(e){console.warn('kakao share',e);return false}
 }
-async function shLink(){
-  const c=SHP.card(),url=shURL();
-  if(shTouch()&&navigator.share){try{await navigator.share({title:'아파트세금계산기',text:`${c.title} ${c.label}: ${c.big}`,url});return}catch(e){if(e&&e.name==='AbortError')return}}
-  shToast(await shCopy(url)?'링크를 복사했어요. 받은 사람도 같은 결과를 볼 수 있어요':'복사하지 못했어요. 다시 눌러 주세요');
+/* 공유 버튼 하나: 카카오 연결돼 있으면 카톡 메시지(사진+링크), 아니면 사진 공유 + 링크 자동 복사 */
+async function shAll(btn){
+  if(shAll.busy)return;shAll.busy=true;const label=btn&&btn.textContent;
+  try{
+    const c=SHP.card(),url=shURL();
+    if(KKEY){btn&&(btn.textContent='카카오톡 여는 중…');if(await shKakao(c,url))return}
+    const cp=shCopy(url); /* 버튼 누른 순간 바로 복사 (공유 창이 뜨면 복사가 막힐 수 있어서 먼저) */
+    const img=shDraw(c).toDataURL('image/png'),fname=`apttaxcalc-${SHP.slug}.png`;
+    if(shTouch()){try{const file=new File([shBlob(img)],fname,{type:'image/png'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});/* 글을 같이 넣으면 카톡이 사진을 빼고 글만 보냄 → 사진만 */
+        shToast(await cp?'링크도 복사해 뒀어요. 대화창에 붙여넣기 하면 함께 보낼 수 있어요':'');return}}
+      catch(e){if(e&&e.name==='AbortError'){shToast(await cp?'링크는 복사해 뒀어요':'');return}}}
+    shModal(img,fname,url,await cp);
+  }finally{shAll.busy=false;if(btn)btn.textContent=label}
 }
 function shMount(papers){
   for(const p of papers){if(!p||p.nextElementSibling?.classList.contains('shr'))continue;
     const d=document.createElement('div');d.className='shr';
-    d.innerHTML=`<button type="button" class="shrb pri" data-shimg>결과 이미지로 공유</button><button type="button" class="shrb" data-shlink>${shTouch()?'링크 공유':'링크 복사'}</button>`;
-    d.addEventListener('click',e=>{if(e.target.closest('[data-shimg]'))shImage();else if(e.target.closest('[data-shlink]'))shLink()});
+    d.innerHTML=`<button type="button" class="shrb pri" data-shall>${KKEY?'카카오톡으로 결과 공유':'결과 공유하기 (사진 + 링크)'}</button>`+(KKEY?'<button type="button" class="shrmore" data-shmore>다른 앱으로 보내기 · 사진 저장</button>':'');
+    d.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
+      if(b.hasAttribute('data-shall'))shAll(b);
+      else if(b.hasAttribute('data-shmore')){const c=SHP.card(),url=shURL(),cp=shCopy(url);shModal(shDraw(c).toDataURL('image/png'),`apttaxcalc-${SHP.slug}.png`,url,await cp)}});
     p.after(d)}
 }
 function shInit(){
@@ -200,7 +237,7 @@ function shInit(){
     SHRO=false;try{history.replaceState(null,'',location.pathname+location.hash)}catch(x){}document.querySelector('.shrnote')?.remove()};
   for(const ev of ['input','change','click'])document.addEventListener(ev,rel,true);
 }
-window.__share={url:()=>SHP&&shURL(),card:()=>SHP&&SHP.card(),draw:c=>shDraw(c),state:()=>SHP&&SHP.state(),ro:()=>SHRO};
+window.__share={url:()=>SHP&&shURL(),card:()=>SHP&&SHP.card(),draw:c=>shDraw(c),drawSq:c=>shDrawSq(c),state:()=>SHP&&SHP.state(),ro:()=>SHRO};
 
 if($('apts')){
 /* ---------- UI ---------- */

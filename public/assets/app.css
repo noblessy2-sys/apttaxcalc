@@ -196,6 +196,8 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;bac
 .shrbox img{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line)}
 .shrbox .hint{margin:10px 2px}
 .shrbtns{display:flex;gap:8px}.shrbtns .shrb{flex:1}.shrbtns .shrb.pri{flex:1.3}
+.shr{flex-direction:column;align-items:stretch}.shr .shrb.pri{flex:none;min-height:52px;font-size:16px}
+.shrmore{font:inherit;font-size:14px;background:none;border:0;color:var(--mute);text-decoration:underline;text-underline-offset:3px;padding:8px;cursor:pointer;align-self:center}
 
 header.top .brand{display:inline-block;color:#fff;text-decoration:none;font-weight:700;font-size:14px;opacity:.95;margin-bottom:6px;padding:4px 0}
 .crumb{font-size:13px;color:var(--mute);margin:0 0 6px}.crumb a{color:var(--mute)}
