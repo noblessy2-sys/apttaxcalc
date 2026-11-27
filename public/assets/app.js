@@ -121,7 +121,7 @@ async function lookup(){
   set('<span class="lwait">찾는 중…</span>');
   if(PREVIEW){set('<span class="lerr">이 미리보기 화면에는 조회 서버가 없어서 동작하지 않아요. 실제 사이트에 올리고 브이월드 인증키를 연결하면 바로 동작해요. 지금은 <a href="https://www.realtyprice.kr/" target="_blank" rel="noopener">부동산공시가격알리미 ↗</a>에서 확인해 주세요.</span>');return}
   let j;try{const r=await fetch('/api/gongsi?'+new URLSearchParams({q,dong,ho}));j=await r.json()}catch(x){j={error:'NET'}}
-  if(j.error==='NO_KEY'){set('<span class="lerr">사이트에 브이월드 인증키가 아직 연결되지 않았어요 (관리자 설정 필요). '+FALLBACK+'</span>');return}
+  if(j.error==='NO_KEY'){set('공시가격 바로 찾기는 준비 중이에요. '+FALLBACK.replace('지금은 바로 조회가 안 돼요. ','지금은 '));return}
   const apt=esc(j.aptName||''),yr=esc(j.year||'');
   const chips=(arr,attr,suf)=>'<div class="lchips">'+arr.slice(0,60).map(v=>`<button type="button" data-${attr}="${esc(v)}">${esc(v)}${suf}</button>`).join('')+(arr.length>60?'<span class="sub"> …</span>':'')+'</div>';
   if(j.match){const m=j.match;a.price=m.price;a.mode='pub';if(!a.name)a.name=`${j.aptName} ${m.dong}동`;
