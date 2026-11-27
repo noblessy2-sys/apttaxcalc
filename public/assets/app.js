@@ -187,7 +187,7 @@ function shDrawSq(c){
   return cv;
 }
 function shBlob(url){const b=atob(url.split(',')[1]),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new Blob([u],{type:'image/png'})}
-function shToast(t){let e=document.querySelector('.shrtoast');if(!e){e=document.createElement('div');e.className='shrtoast';e.setAttribute('role','status');document.body.append(e)}e.textContent=t;e.classList.add('on');clearTimeout(shToast.t);shToast.t=setTimeout(()=>e.classList.remove('on'),2200)}
+function shToast(t){let e=document.querySelector('.shrtoast');if(!e){e=document.createElement('div');e.className='shrtoast';e.setAttribute('role','status');document.body.append(e)}e.textContent=t;e.classList.add('on');clearTimeout(shToast.t);shToast.t=setTimeout(()=>e.classList.remove('on'),t.length>40?6000:2200)}
 async function shCopy(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.append(a);a.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}a.remove();return ok}}
 const shTouch=()=>matchMedia('(pointer:coarse)').matches;
 function shModal(img,fname,url,copied){
@@ -225,7 +225,7 @@ async function shAll(btn){
     const img=shDraw(c).toDataURL('image/png'),fname=`apttaxcalc-${SHP.slug}.png`;
     if(shTouch()){try{const file=new File([shBlob(img)],fname,{type:'image/png'});
       if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});/* 글을 같이 넣으면 카톡이 사진을 빼고 글만 보냄 → 사진만 */
-        shToast(await cp?'링크도 복사해 뒀어요. 대화창에 붙여넣기 하면 함께 보낼 수 있어요':'');return}}
+        shToast((shKakao.err?'(카카오 공유 실패: '+shKakao.err+') ':'')+(await cp?'링크도 복사해 뒀어요. 대화창에 붙여넣기 하면 함께 보낼 수 있어요':''));return}}
       catch(e){if(e&&e.name==='AbortError'){shToast(await cp?'링크는 복사해 뒀어요':'');return}}}
     shModal(img,fname,url,await cp);
   }finally{shAll.busy=false;if(btn)btn.textContent=label}
