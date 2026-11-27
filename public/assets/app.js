@@ -103,9 +103,9 @@ let SHRO=false,SHA=false,SHP=null,OB=null;
 const KKEY=(document.querySelector('meta[name="kakao-key"]')||{}).content||'';
 /* 카카오 SDK: 페이지가 뜬 뒤 스크립트로 불러옴 (실패 이유를 알 수 있게) */
 let KSDK=null,KERR='';
-function kLoad(){if(window.Kakao&&Kakao.Share)return Promise.resolve();if(KSDK)return KSDK;
+function kLoad(){if(window.Kakao&&Kakao.init)return Promise.resolve();if(KSDK)return KSDK;
   KSDK=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://t1.kakaocdn.net/kakao_js_sdk/2.8.5/kakao.min.js';s.async=true;
-    s.onload=()=>window.Kakao&&Kakao.Share?ok():no(new Error('SDK를 받았지만 Kakao 기능이 없어요'));
+    s.onload=()=>window.Kakao&&Kakao.init?ok():no(new Error('SDK를 받았지만 Kakao 기능이 없어요'));
     s.onerror=()=>no(new Error('SDK 파일을 받지 못했어요 (네트워크·차단)'));document.head.append(s)});
   KSDK.catch(e=>{KERR=e.message;KSDK=null});return KSDK}
 if(KKEY)kLoad().catch(()=>{}); /* build.py의 KAKAO_KEY. 없으면 카카오 공유 대신 사진 공유+링크 복사 */
@@ -205,8 +205,9 @@ function shModal(img,fname,url,copied){
 async function shKakao(c,url){
   shKakao.err='';
   if(!KKEY)return false;
-  if(!window.Kakao||!Kakao.Share){try{await Promise.race([kLoad(),new Promise((_,no)=>setTimeout(()=>no(new Error('SDK 불러오기 시간 초과')),4000))])}catch(e){shKakao.err=e.message||KERR||'카카오 SDK를 불러오지 못했어요';return false}}
-  try{if(!Kakao.isInitialized())Kakao.init(KKEY);
+  if(!window.Kakao||!Kakao.init){try{await Promise.race([kLoad(),new Promise((_,no)=>setTimeout(()=>no(new Error('SDK 불러오기 시간 초과')),4000))])}catch(e){shKakao.err=e.message||KERR||'카카오 SDK를 불러오지 못했어요';return false}}
+  try{if(!Kakao.isInitialized())Kakao.init(KKEY); /* Kakao.Share는 init 뒤에 생김 */
+    if(!Kakao.Share)throw new Error('Kakao.Share 없음');
     const file=new File([shBlob(shDrawSq(c).toDataURL('image/png'))],'apttaxcalc.png',{type:'image/png'});
     let files=[file];try{const dt=new DataTransfer();dt.items.add(file);files=dt.files}catch(x){} /* 카카오 예제처럼 FileList로 */
     const r=await Kakao.Share.uploadImage({file:files}),base=location.origin+location.pathname;
