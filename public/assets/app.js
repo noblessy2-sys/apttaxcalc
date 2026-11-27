@@ -100,7 +100,15 @@ const SHR=(()=>{try{const q=new URLSearchParams(location.search).get('s');if(!q|
   const b=atob(q.replace(/-/g,'+').replace(/_/g,'/'));const o=JSON.parse(new TextDecoder().decode(Uint8Array.from(b,c=>c.charCodeAt(0))));
   return o&&typeof o==='object'&&!Array.isArray(o)?o:null}catch(e){return null}})();
 let SHRO=false,SHA=false,SHP=null,OB=null;
-const KKEY=(document.querySelector('meta[name="kakao-key"]')||{}).content||''; /* build.py의 KAKAO_KEY. 없으면 카카오 공유 대신 사진 공유+링크 복사 */
+const KKEY=(document.querySelector('meta[name="kakao-key"]')||{}).content||'';
+/* 카카오 SDK: 페이지가 뜬 뒤 스크립트로 불러옴 (실패 이유를 알 수 있게) */
+let KSDK=null,KERR='';
+function kLoad(){if(window.Kakao&&Kakao.Share)return Promise.resolve();if(KSDK)return KSDK;
+  KSDK=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://t1.kakaocdn.net/kakao_js_sdk/2.8.5/kakao.min.js';s.async=true;
+    s.onload=()=>window.Kakao&&Kakao.Share?ok():no(new Error('SDK를 받았지만 Kakao 기능이 없어요'));
+    s.onerror=()=>no(new Error('SDK 파일을 받지 못했어요 (네트워크·차단)'));document.head.append(s)});
+  KSDK.catch(e=>{KERR=e.message;KSDK=null});return KSDK}
+if(KKEY)kLoad().catch(()=>{}); /* build.py의 KAKAO_KEY. 없으면 카카오 공유 대신 사진 공유+링크 복사 */
 function SAVE(k,v){if(!SHRO)localStorage.setItem(k,v)}
 const SN=(v,a,b,d)=>{v=typeof v==='number'?v:NaN;return Number.isFinite(v)&&v>=a&&v<=b?v:d};
 const SE=(v,arr,d)=>arr.includes(v)?v:d;
@@ -197,7 +205,7 @@ function shModal(img,fname,url,copied){
 async function shKakao(c,url){
   shKakao.err='';
   if(!KKEY)return false;
-  if(!window.Kakao||!Kakao.Share){shKakao.err='카카오 SDK를 불러오지 못했어요';return false}
+  if(!window.Kakao||!Kakao.Share){try{await Promise.race([kLoad(),new Promise((_,no)=>setTimeout(()=>no(new Error('SDK 불러오기 시간 초과')),4000))])}catch(e){shKakao.err=e.message||KERR||'카카오 SDK를 불러오지 못했어요';return false}}
   try{if(!Kakao.isInitialized())Kakao.init(KKEY);
     const file=new File([shBlob(shDrawSq(c).toDataURL('image/png'))],'apttaxcalc.png',{type:'image/png'});
     let files=[file];try{const dt=new DataTransfer();dt.items.add(file);files=dt.files}catch(x){} /* 카카오 예제처럼 FileList로 */
